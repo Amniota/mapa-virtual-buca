@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Mapa AR - Historia</title>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <style>
+    :root {
+      --img-size: 150px;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .ui-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 16px;
+      z-index: 10;
+    }
+
+    .ficha {
+      pointer-events: auto;
+      background: rgba(16, 18, 24, 0.9);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+      padding: 14px 16px;
+      backdrop-filter: blur(8px);
+      margin-bottom: 12px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .ficha-img-wrap {
+      flex: 0 0 var(--img-size);
+      width: var(--img-size);
+      height: var(--img-size);
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ficha-img-wrap.sin-imagen {
+      display: none;
+    }
+
+    #lugar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Ventana de texto con la misma altura que la imagen y scroll vertical */
+    .ficha-contenido {
+      flex: 1;
+      min-width: 0;
+      height: var(--img-size);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding-right: 6px;
+    }
+
+    /* Scrollbar sutil y estética para móviles/escritorio */
+    .ficha-contenido::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .ficha-contenido::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+    }
+
+    .ficha-contenido::-webkit-scrollbar-thumb {
+      background: rgba(246, 185, 59, 0.75);
+      border-radius: 999px;
+    }
+
+    .ficha h3 {
+      position: sticky;
+      top: 0;
+      background: rgba(16, 18, 24, 0.96);
+      margin: 0 0 6px;
+      padding-bottom: 2px;
+      font-size: 1.05rem;
+      color: #f6b93b;
+      z-index: 1;
+    }
+
+    .ficha p {
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.38;
+      color: #e5e7eb;
+    }
+
+    .controles {
+      pointer-events: auto;
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      background: #f6b93b;
+      color: #111111;
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    @media (max-width: 480px) {
+      :root {
+        --img-size: 96px;
+      }
+
+      .ficha {
+        gap: 12px;
+        padding: 12px 14px;
+      }
+
+      .ficha p {
+        font-size: 0.86rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ui-overlay">
+    <div class="ficha">
+      <div class="ficha-img-wrap" id="lugar-img-wrap">
+        <img id="lugar-img" src="" alt="" />
+      </div>
+      <div class="ficha-contenido" id="lugar-contenido">
+        <h3 id="lugar-titulo">Cargando lugar...</h3>
+        <p id="lugar-desc">Apunta tu cámara al mapa del libro.</p>
+      </div>
+    </div>
+    <div class="controles">
+      <button id="btn-prev" type="button">&lt; Anterior</button>
+      <button id="btn-next" type="button">Siguiente &gt;</button>
+    </div>
+  </div>
+
+  <a-scene
+    mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: true;"
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-assets>
+      <a-asset-item id="mapa-model" src="./assets/mapa3d.glb"></a-asset-item>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0">
+      <a-entity id="contenedor-mapa" scale="1.2 1.2 1.2">
+        <a-gltf-model
+          id="modelo-mapa"
+          src="#mapa-model"
+          position="0 0 0.15"
+          rotation="90 0 0"
+          scale="1 1 1">
+        </a-gltf-model>
+
+        <a-entity id="pin-activo" position="0 0 0.25">
+          <a-entity
+            position="0 0 0.05"
+            rotation="90 0 0"
+            animation="property: position; from: 0 0 0.04; to: 0 0 0.11; dir: alternate; dur: 750; easing: easeInOutSine; loop: true">
+            <a-cone
+              position="0 -0.05 0"
+              rotation="0 0 180"
+              radius-bottom="0.032"
+              radius-top="0.002"
+              height="0.055"
+              color="#ff3b30">
+            </a-cone>
+            <a-cylinder
+              position="0 0.015 0"
+              radius="0.01"
+              height="0.08"
+              color="#ff3b30">
+            </a-cylinder>
+          </a-entity>
+        </a-entity>
+      </a-entity>
+    </a-entity>
+  </a-scene>
+
+  <script>
+    const lugares = [
+      {
+        titulo: "La Deidad",
+        desc: "Una esfera de 350 metros de radio, suspendida a 900 metros sobre el suelo, es el hogar de 200.000 habitantes pertenecientes a la élite de la nación. En su núcleo se encuentra la Cámara Real, residencia de la Diosa Buca y corazón del poder político y espiritual del régimen. Ascender hasta ella es un privilegio reservado para unos pocos; descender, en cambio, es tan sencillo como dejarse vencer por la gravedad.",
+        pos: [0.0, 0.0, 0.30]
+      },
+      {
+        titulo: "El muro",
+        desc: "Un anillo amurallado de 1,1 km de radio y 300 metros de altura que delimita y protege la Ciudad de Buca, habitada por 65.000 personas que gozan de una buena calidad de vida, con acceso privilegiado a recursos, servicios y alimentos. Dentro de las murallas residen otras 20.000 personas, conformadas exclusivamente por soldados y funcionarios del Gobierno, encargados de la vigilancia, la defensa y la administración del territorio.",
+        pos: [0.09, -0.09, 0.25]
+      },
+      {
+        titulo: "Anillo interior",
+        desc: "Zona concéntrica que rodea la ciudad de Buca, con una población aproximada de 80.600 habitantes. Se caracteriza por una fuerte presencia militar, una vigilancia permanente y un estricto control del orden público. Sus habitantes viven bajo una aparente estabilidad, protegidos del caos que impera en el exterior y de cualquier amenaza que pueda alcanzar las murallas de la ciudad. Es un buen lugar para vivir, siempre que sepas obedecer las reglas.",
+        pos: [0.2, -0.2, 0.25]
+      },
+      {
+        titulo: "Anillo intermedio",
+        desc: "Zona comercial de intensa actividad, habitada por aproximadamente 25.740 personas. Presenta una profunda desigualdad socioeconómica: mientras una minoría disfruta de grandes privilegios, la mayoría enfrenta largas jornadas laborales, precariedad y dificultades para acceder a servicios básicos. La delincuencia, la insalubridad y la limitada atención médica reflejan las contradicciones de un territorio donde la riqueza y la miseria coexisten.",
+        pos: [0.34, -0.35, 0.25]
+      },
+      {
+        titulo: "Anillo Externo",
+        desc: "Zona con aproximadamente 37.000 habitantes. Es un sector empobrecido, con una fuerte presencia militar y numerosos puestos de vigilancia y batallones. Es el principal centro de reclutamiento de la nación, donde jóvenes desde los 14 años son formados como soldados. Sus habitantes viven en condiciones precarias, aunque cuentan con cierta protección frente a los peligros del exterior. Sin embargo, las incursiones frecuentes de forasteros, algunos con intenciones hostiles, mantienen la zona bajo amenaza constante.",
+        pos: [0.5, -0.49, 0.25]
+      },
+      {
+        titulo: "Caserío 22",
+        desc: "Uno de los asentamientos más grandes de la periferia, con 500 habitantes. Es el hogar de Carlos, Asha y Esperanza. Sus viviendas improvisadas, construidas con materiales recuperados, se agrupan entre calles estrechas y sin pavimentar. La precariedad y el abandono contrastan con la solidaridad y el espíritu comunitario de sus habitantes.",
+        pos: [0.05, -0.62, 0.25]
+      },
+      {
+        titulo: "Exterior",
+        desc: "Buca no ejerce su dominio sobre estas tierras. Es un territorio hostil y peligroso, pero algunos prefieren enfrentarse a sus amenazas antes que vivir sometidos a una deidad. Mantente alerta: las bestias salvajes acechan por todas partes.",
+        pos: [0.65, -0.65, 0.25]
+      }
+    ];
+
+    let indice = 0;
+    const contenidoEl = document.getElementById("lugar-contenido");
+    const tituloEl = document.getElementById("lugar-titulo");
+    const descEl = document.getElementById("lugar-desc");
+    const imgEl = document.getElementById("lugar-img");
+    const imgWrapEl = document.getElementById("lugar-img-wrap");
+    const pinEl = document.getElementById("pin-activo");
+
+    imgEl.addEventListener("error", () => {
+      imgWrapEl.classList.add("sin-imagen");
+    });
+
+    imgEl.addEventListener("load", () => {
+      imgWrapEl.classList.remove("sin-imagen");
+    });
+
+    function actualizarLugar() {
+      const lugar = lugares[indice];
+      const rutaImagen = `./assets/${encodeURIComponent(lugar.titulo)}.jpg`;
+
+      tituloEl.textContent = `${indice + 1}/${lugares.length} · ${lugar.titulo}`;
+      descEl.textContent = lugar.desc;
+      contenidoEl.scrollTop = 0;
+
+      imgEl.alt = lugar.titulo;
+      imgEl.src = rutaImagen;
+      pinEl.setAttribute("position", `${lugar.pos[0]} ${lugar.pos[1]} ${lugar.pos[2]}`);
+    }
+
+    document.getElementById("btn-next").addEventListener("click", () => {
+      indice = (indice + 1) % lugares.length;
+      actualizarLugar();
+    });
+
+    document.getElementById("btn-prev").addEventListener("click", () => {
+      indice = (indice - 1 + lugares.length) % lugares.length;
+      actualizarLugar();
+    });
+
+    actualizarLugar();
+    
+    // --- HERRAMIENTA TEMPORAL PARA CALIBRAR COORDENADAS ---
+const modeloMapaEl = document.getElementById("modelo-mapa");
+const contenedorMapaEl = document.getElementById("contenedor-mapa");
+
+// Permite apuntar con mouse o toque en la escena
+const sceneEl = document.querySelector("a-scene");
+
+function capturarCoordenada(evt) {
+  const intersection = evt.detail && evt.detail.intersection;
+  if (!intersection) return;
+
+  // Convertimos el punto del mundo (3D) a coordenadas locales de #contenedor-mapa
+  const puntoLocal = contenedorMapaEl.object3D.worldToLocal(
+    intersection.point.clone()
+  );
+
+  // Le sumamos un poquito en Z para que la punta del pin no quede hundida en la malla
+  const x = Number(puntoLocal.x.toFixed(3));
+  const y = Number(puntoLocal.y.toFixed(3));
+  const z = Number((puntoLocal.z + 0.02).toFixed(3));
+
+  pinEl.setAttribute("position", `${x} ${y} ${z}`);
+  console.log(`Coordenada para "${lugares[indice].titulo}": pos: [${x}, ${y}, ${z}]`);
+}
+
+modeloMapaEl.addEventListener("click", capturarCoordenada);
+// ----------------------------------------------------
+  </script>
+</body>
+</html>

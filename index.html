@@ -17,6 +17,13 @@
       font-family: system-ui, -apple-system, sans-serif;
     }
 
+    .a-enter-vr,
+    .a-enter-vr-button,
+    .a-enter-ar,
+    .a-enter-ar-button {
+      display: none !important;
+    }
+
     .ui-overlay {
       position: fixed;
       inset: 0;
@@ -295,6 +302,10 @@
     const modeloMapaEl = document.getElementById("modelo-mapa");
     const contenedorMapaEl = document.getElementById("contenedor-mapa");
     const sceneEl = document.querySelector("a-scene");
+
+    sceneEl.addEventListener("loaded", () => {
+      sceneEl.setAttribute("vr-mode-ui", "enabled: false");
+    });
 
     sceneEl.addEventListener("enter-vr", () => {
       if (sceneEl.is("vr-mode") && sceneEl.exitVR) {

@@ -66,7 +66,6 @@
       display: block;
     }
 
-    /* Ventana de texto con la misma altura que la imagen y scroll vertical */
     .ficha-contenido {
       flex: 1;
       min-width: 0;
@@ -77,7 +76,6 @@
       padding-right: 6px;
     }
 
-    /* Scrollbar sutil y estética para móviles/escritorio */
     .ficha-contenido::-webkit-scrollbar {
       width: 5px;
     }
@@ -292,34 +290,36 @@
     });
 
     actualizarLugar();
-    
+
     // --- HERRAMIENTA TEMPORAL PARA CALIBRAR COORDENADAS ---
-const modeloMapaEl = document.getElementById("modelo-mapa");
-const contenedorMapaEl = document.getElementById("contenedor-mapa");
+    const modeloMapaEl = document.getElementById("modelo-mapa");
+    const contenedorMapaEl = document.getElementById("contenedor-mapa");
+    const sceneEl = document.querySelector("a-scene");
 
-// Permite apuntar con mouse o toque en la escena
-const sceneEl = document.querySelector("a-scene");
+    sceneEl.addEventListener("enter-vr", () => {
+      if (sceneEl.is("vr-mode") && sceneEl.exitVR) {
+        sceneEl.exitVR();
+      }
+    });
 
-function capturarCoordenada(evt) {
-  const intersection = evt.detail && evt.detail.intersection;
-  if (!intersection) return;
+    function capturarCoordenada(evt) {
+      const intersection = evt.detail && evt.detail.intersection;
+      if (!intersection) return;
 
-  // Convertimos el punto del mundo (3D) a coordenadas locales de #contenedor-mapa
-  const puntoLocal = contenedorMapaEl.object3D.worldToLocal(
-    intersection.point.clone()
-  );
+      const puntoLocal = contenedorMapaEl.object3D.worldToLocal(
+        intersection.point.clone()
+      );
 
-  // Le sumamos un poquito en Z para que la punta del pin no quede hundida en la malla
-  const x = Number(puntoLocal.x.toFixed(3));
-  const y = Number(puntoLocal.y.toFixed(3));
-  const z = Number((puntoLocal.z + 0.02).toFixed(3));
+      const x = Number(puntoLocal.x.toFixed(3));
+      const y = Number(puntoLocal.y.toFixed(3));
+      const z = Number((puntoLocal.z + 0.02).toFixed(3));
 
-  pinEl.setAttribute("position", `${x} ${y} ${z}`);
-  console.log(`Coordenada para "${lugares[indice].titulo}": pos: [${x}, ${y}, ${z}]`);
-}
+      pinEl.setAttribute("position", `${x} ${y} ${z}`);
+      console.log(`Coordenada para "${lugares[indice].titulo}": pos: [${x}, ${y}, ${z}]`);
+    }
 
-modeloMapaEl.addEventListener("click", capturarCoordenada);
-// ----------------------------------------------------
+    modeloMapaEl.addEventListener("click", capturarCoordenada);
+    // ----------------------------------------------------
   </script>
 </body>
 </html>
